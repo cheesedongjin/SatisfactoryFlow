@@ -88,7 +88,8 @@ class App(tk.Tk):
     def build_graph(self) -> nx.DiGraph:
         G = nx.DiGraph()
         for idx, node in enumerate(self.nodes):
-            G.add_node(idx, label=node.name)
+            label = f"{node.name}\n{node.clock:.1f}%"
+            G.add_node(idx, label=label)
         for src_idx, src in enumerate(self.nodes):
             for item in src.outputs:
                 for dst_idx, dst in enumerate(self.nodes):
