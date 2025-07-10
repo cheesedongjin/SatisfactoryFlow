@@ -323,7 +323,14 @@ class RecipeDialog(simpledialog.Dialog):
             self.recipes = json.load(f)
         super().__init__(master, title='Disabled Recipes')
 
-    def body(self, frame: tk.Frame) -> None:
+    def body(self, frame: tk.Frame) -> tk.Entry:
+        search_frame = ttk.Frame(frame)
+        search_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(search_frame, text='Search').pack(side=tk.LEFT)
+        self.search_var = tk.StringVar()
+        entry = ttk.Entry(search_frame, textvariable=self.search_var)
+        entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
         canvas = tk.Canvas(frame, width=400, height=300)
         scrollbar = ttk.Scrollbar(frame, orient='vertical', command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
@@ -335,13 +342,29 @@ class RecipeDialog(simpledialog.Dialog):
         inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
 
         self.vars: Dict[str, tk.BooleanVar] = {}
+        self.checks: Dict[str, ttk.Checkbutton] = {}
         row = 0
         for r_id, rec in sorted(self.recipes.items(), key=lambda x: x[1]['name']):
             var = tk.BooleanVar(value=r_id in self.disabled)
             chk = ttk.Checkbutton(inner, text=rec['name'], variable=var)
             chk.grid(row=row, column=0, sticky='w')
             self.vars[r_id] = var
+            self.checks[r_id] = chk
             row += 1
+
+        self.search_var.trace_add('write', lambda *_: self._filter())
+        self._filter()
+
+        return entry
+
+    def _filter(self) -> None:
+        query = self.search_var.get().lower()
+        for rid, chk in self.checks.items():
+            name = self.recipes.get(rid, {}).get('name', '').lower()
+            if query in name:
+                chk.grid()
+            else:
+                chk.grid_remove()
 
     def apply(self) -> None:
         self.result = {rid for rid, var in self.vars.items() if var.get()}
