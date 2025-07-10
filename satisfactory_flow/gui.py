@@ -5,8 +5,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import networkx as nx
 import matplotlib.pyplot as plt
-from networkx.drawing.nx_agraph import to_agraph
-import tempfile
 
 from .models import Node
 from .auto import generate_workspace, set_disabled_recipes
@@ -102,18 +100,17 @@ class App(tk.Tk):
 
     def show_graph(self) -> None:
         G = self.build_graph()
-        A = to_agraph(G)
-        A.graph_attr.update(splines="ortho", rankdir="LR")
-        for n, data in G.nodes(data=True):
-            A.get_node(n).attr["label"] = data.get("label", str(n))
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-            A.draw(tmp.name, prog="dot")
-            img = plt.imread(tmp.name)
+        node_labels = nx.get_node_attributes(G, "label")
+        edge_labels = nx.get_edge_attributes(G, "label")
+        pos = nx.spring_layout(G)
         plt.figure(figsize=(8, 6))
-        plt.imshow(img)
+        nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1500,
+                node_color="#A7D3F3", arrows=True, font_size=8)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels,
+                                     font_size=8)
         plt.axis("off")
+        plt.tight_layout()
         plt.show()
-        os.unlink(tmp.name)
 
     def save_workspace(self) -> None:
         data = {
