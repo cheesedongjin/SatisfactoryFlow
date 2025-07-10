@@ -7,6 +7,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 from .models import Node
+from .auto import generate_workspace
 
 WORKSPACE_FILE = "workspace.json"
 
@@ -27,6 +28,7 @@ class App(tk.Tk):
         ttk.Button(toolbar, text="Delete Node", command=self.delete_node).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Show Graph", command=self.show_graph).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Save", command=self.save_workspace).pack(side=tk.LEFT)
+        ttk.Button(toolbar, text="Auto Build", command=self.auto_build).pack(side=tk.LEFT)
 
         self.node_list = tk.Listbox(self)
         self.node_list.pack(fill=tk.BOTH, expand=True)
@@ -63,6 +65,14 @@ class App(tk.Tk):
             return
         idx = sel[0]
         del self.nodes[idx]
+        self.refresh_list()
+
+    def auto_build(self) -> None:
+        dlg = AutoDialog(self)
+        res = dlg.result
+        if not res:
+            return
+        self.nodes = generate_workspace(res['item_id'], res['rate'])
         self.refresh_list()
 
     def build_graph(self) -> nx.DiGraph:
@@ -203,5 +213,51 @@ class NodeDialog(simpledialog.Dialog):
             filled_slots=int(self.vars['filled'].get()),
             total_slots=int(self.vars['total'].get()),
         )
+
+
+class AutoDialog(simpledialog.Dialog):
+    def body(self, frame: tk.Frame) -> tk.Entry:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'items.json'), 'r', encoding='utf-8') as f:
+            self.items = json.load(f)
+        names = sorted(v['name'] for v in self.items.values())
+        self.name_map = {v['name']: k for k, v in self.items.items()}
+
+        ttk.Label(frame, text='Target Item').grid(row=0, column=0)
+        self.cb = ttk.Combobox(frame, values=names, state='readonly')
+        self.cb.grid(row=0, column=1)
+        if names:
+            self.cb.set(names[0])
+
+        ttk.Label(frame, text='Rate per minute').grid(row=1, column=0)
+        self.rate = tk.Entry(frame)
+        self.rate.grid(row=1, column=1)
+
+        ttk.Label(frame, text='Max Somersloops').grid(row=2, column=0)
+        self.somers = tk.Entry(frame)
+        self.somers.grid(row=2, column=1)
+        self.somers.insert(0, '0')
+
+        ttk.Label(frame, text='Max Power Shards').grid(row=3, column=0)
+        self.shards = tk.Entry(frame)
+        self.shards.grid(row=3, column=1)
+        self.shards.insert(0, '0')
+
+        return self.rate
+
+    def validate(self) -> bool:
+        try:
+            float(self.rate.get())
+            int(self.somers.get())
+            int(self.shards.get())
+        except ValueError:
+            messagebox.showerror('Error', 'Invalid numeric input')
+            return False
+        return True
+
+    def apply(self) -> None:
+        item_name = self.cb.get()
+        item_id = self.name_map[item_name]
+        rate = float(self.rate.get())
+        self.result = {'item_id': item_id, 'rate': rate}
 
 
