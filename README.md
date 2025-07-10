@@ -6,7 +6,9 @@ The application allows you to create "nodes" representing production buildings o
 Features
 --------
 - Add/edit/delete nodes with custom inputs, outputs and base power usage.
-- Support for clock speeds from 0% to 250% with the Satisfactory overclocking power formula.
+- Support for clock speeds from 0% to 250% with the Satisfactory overclocking power formula. The
+  allowed maximum clock speed is automatically limited to `100% + 50% × shards` (capped at 250%).
+- Clock speeds are stored with four decimal places of precision.
 - Optional Somersloop style power multiplier using filled and total slot counts.
 - Save and load a workspace automatically (`workspace.json`).
 - Visualize node connections with a simple graph using NetworkX and Matplotlib.

@@ -162,13 +162,17 @@ class NodeDialog(simpledialog.Dialog):
 
     def validate(self) -> bool:
         try:
-            clock = float(self.vars['clock'].get())
-            if clock < 0 or clock > 250:
-                raise ValueError
             shards = int(self.vars['shards'].get())
             base_power = float(self.vars['base_power'].get())
+            clock = float(self.vars['clock'].get())
+            max_clock = min(250.0, 100.0 + shards * 50.0)
+            if clock < 0 or clock > max_clock:
+                raise ValueError
         except ValueError:
-            messagebox.showerror("Error", "Invalid numeric input")
+            messagebox.showerror(
+                "Error",
+                f"Invalid numeric input or clock exceeds limit ({max_clock:.1f}%)",
+            )
             return False
         return True
 
@@ -194,7 +198,7 @@ class NodeDialog(simpledialog.Dialog):
             base_power=float(self.vars['base_power'].get()),
             inputs=parse(self.vars['inputs'].get('1.0', 'end')),
             outputs=parse(self.vars['outputs'].get('1.0', 'end')),
-            clock=float(self.vars['clock'].get()),
+            clock=round(float(self.vars['clock'].get()), 4),
             shards=int(self.vars['shards'].get()),
             filled_slots=int(self.vars['filled'].get()),
             total_slots=int(self.vars['total'].get()),

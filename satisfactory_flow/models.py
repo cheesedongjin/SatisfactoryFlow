@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict
 
 @dataclass
@@ -11,6 +11,14 @@ class Node:
     shards: int = 0
     filled_slots: int = 0
     total_slots: int = 0
+
+    def __post_init__(self) -> None:
+        self.clock = round(max(0.0, min(self.clock, self.max_clock())), 4)
+        if self.shards < 0:
+            self.shards = 0
+
+    def max_clock(self) -> float:
+        return min(250.0, 100.0 + self.shards * 50.0)
 
     def power_multiplier(self) -> float:
         if self.total_slots <= 0:
