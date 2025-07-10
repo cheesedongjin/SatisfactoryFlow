@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Dict, List, Set
+from math import ceil
 
 from .models import Node
 
@@ -12,6 +13,9 @@ with open(os.path.join(DATA_DIR, 'recipes.json'), 'r', encoding='utf-8') as f:
     RECIPES: Dict[str, Dict] = json.load(f)
 with open(os.path.join(DATA_DIR, 'buildings.json'), 'r', encoding='utf-8') as f:
     BUILDINGS: Dict[str, Dict] = json.load(f)
+
+ITEMS_BY_NAME: Dict[str, str] = {v['name']: k for k, v in ITEMS.items()}
+RECIPES_BY_NAME: Dict[str, Dict] = {v['name']: v for v in RECIPES.values()}
 
 
 DISABLED_RECIPES: Set[str] = set()
@@ -103,4 +107,69 @@ def _gen_nodes(item_id: str, rate: float, nodes: List[Node], seen: set[str] | No
 def generate_workspace(item_id: str, rate: float) -> List[Node]:
     nodes: List[Node] = []
     _gen_nodes(item_id, rate, nodes, set())
+    nodes = _merge_nodes(nodes)
     return nodes
+
+
+def _merge_nodes(nodes: List[Node]) -> List[Node]:
+    merged: Dict[str, Node] = {}
+    per_machine: Dict[str, float] = {}
+
+    def recipe_rate(name: str, out_name: str) -> float:
+        recipe_key = name.split("(")[-1].rstrip(")") if "(" in name else ""
+        recipe = RECIPES_BY_NAME.get(recipe_key)
+        if not recipe:
+            return 0.0
+        out_id = ITEMS_BY_NAME.get(out_name)
+        amount = 0.0
+        for p in recipe.get("products", []):
+            if p["item"] == out_id:
+                amount = p["amount"]
+                break
+        if amount <= 0:
+            amount = recipe.get("products", [{}])[0].get("amount", 0)
+        return amount * 60.0 / recipe.get("duration", 1)
+
+    for node in nodes:
+        key = node.name
+        out_name, out_rate = next(iter(node.outputs.items()))
+        if key not in merged:
+            merged[key] = Node(
+                name=node.name,
+                base_power=node.base_power,
+                inputs=node.inputs.copy(),
+                outputs=node.outputs.copy(),
+                clock=100.0,
+                shards=node.shards,
+                filled_slots=node.filled_slots,
+                total_slots=node.total_slots,
+                count=0.0,
+            )
+            if key.startswith("Source") or key.startswith("Loop"):
+                per_machine[key] = out_rate / node.count if node.count else out_rate
+            else:
+                per_machine[key] = recipe_rate(node.name, out_name)
+        else:
+            m = merged[key]
+            for k, v in node.inputs.items():
+                m.inputs[k] = m.inputs.get(k, 0.0) + v
+            for k, v in node.outputs.items():
+                m.outputs[k] = m.outputs.get(k, 0.0) + v
+
+    result: List[Node] = []
+    for key, node in merged.items():
+        out_name, out_rate = next(iter(node.outputs.items()))
+        pm = per_machine.get(key, 0.0)
+        if pm <= 0:
+            # Source or loop; assume rate per machine equals first node rate
+            pm = out_rate
+            machines_needed = 1.0
+        else:
+            machines_needed = out_rate / pm
+        int_count = max(1, ceil(machines_needed))
+        clock = out_rate / (int_count * pm) * 100.0 if pm > 0 else 100.0
+        node.count = float(int_count)
+        node.clock = round(clock, 4)
+        result.append(node)
+
+    return result
