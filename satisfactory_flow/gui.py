@@ -285,7 +285,14 @@ class AutoDialog(simpledialog.Dialog):
         item_name = self.cb.get()
         item_id = self.name_map[item_name]
         rate = float(self.rate.get())
-        self.result = {'item_id': item_id, 'rate': rate}
+        loops = int(self.somers.get())
+        shards = int(self.shards.get())
+        self.result = {
+            'item_id': item_id,
+            'rate': rate,
+            'max_loops': loops,
+            'max_shards': shards,
+        }
 
 
 class RecipeDialog(simpledialog.Dialog):

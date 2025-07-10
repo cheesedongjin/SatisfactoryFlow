@@ -32,7 +32,7 @@ class Node:
         return usage
 
     def production_factor(self) -> float:
-        return self.clock / 100.0
+        return (self.clock / 100.0) * self.power_multiplier()
 
     def to_dict(self) -> Dict:
         return {
