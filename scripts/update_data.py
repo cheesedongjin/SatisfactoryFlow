@@ -131,12 +131,15 @@ def main() -> None:
     clean_recipes = {}
     for cls, data in recipes.items():
         info = data[0]
+        produced_in = info.get("producedIn", [])
+        if not produced_in:
+            continue
         clean_recipes[cls] = {
             "name": info["name"],
             "duration": info["duration"],
             "ingredients": info.get("ingredients", []),
             "products": info.get("products", []),
-            "producedIn": info.get("producedIn", []),
+            "producedIn": produced_in,
             "alternate": info.get("alternate", False),
             "minPower": info.get("minPower"),
             "maxPower": info.get("maxPower"),
