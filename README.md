@@ -24,6 +24,17 @@ python3 satisfactory_flow_gui.py
 If a graphical display cannot be detected the launcher will automatically
 start a simple console interface instead.
 
+### Requirements
+
+Install the following packages before running the tool:
+
+```bash
+pip install networkx matplotlib requests pydot pillow
+sudo apt-get install graphviz
+```
+
+Graphviz is used to draw the node graph without overlapping edges.
+
 The GUI and models are now organized under the `satisfactory_flow` package.
 `satisfactory_flow_gui.py` simply launches the app.
 

@@ -5,6 +5,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import networkx as nx
 import matplotlib.pyplot as plt
+from networkx.drawing.nx_pydot import to_pydot
+from PIL import Image
+import io
 
 from .models import Node
 from .auto import generate_workspace, set_disabled_recipes
@@ -112,81 +115,24 @@ class App(tk.Tk):
         return G
 
     def show_graph(self) -> None:
-        """Display a left-to-right graph with orthogonal edges."""
+        """Display the graph using Graphviz to avoid overlaps."""
         G = self.build_graph()
-        labels = nx.get_node_attributes(G, "label")
 
-        # compute layers from sources to sinks
-        indeg = {n: G.in_degree(n) for n in G.nodes()}
-        layer: Dict[str, int] = {}
-        queue = [n for n, d in indeg.items() if d == 0]
-        for n in queue:
-            layer[n] = 0
-        visited = set(queue)
-        while queue:
-            n = queue.pop(0)
-            for succ in G.successors(n):
-                layer[succ] = max(layer.get(succ, 0), layer[n] + 1)
-                indeg[succ] -= 1
-                if indeg[succ] == 0 and succ not in visited:
-                    visited.add(succ)
-                    queue.append(succ)
-        max_layer = max(layer.values(), default=0)
-        for n in G.nodes():
-            layer.setdefault(n, max_layer)
+        # Convert to pydot graph and configure appearance
+        P = to_pydot(G)
+        P.set_rankdir("LR")
+        for node in P.get_nodes():
+            node.set_shape("rectangle")
+            node.set_style("filled")
+            node.set_fillcolor("#A7D3F3")
 
-        # assign positions: x by layer, y to group inputs near their consumers
-        per_layer: Dict[int, List[str]] = {}
-        for n, l in layer.items():
-            per_layer.setdefault(l, []).append(n)
+        # Render to PNG using Graphviz
+        png_bytes = P.create_png(prog="dot")
+        img = Image.open(io.BytesIO(png_bytes))
 
-        pos: Dict[str, tuple[float, float]] = {}
-        # process layers from left to right so predecessors are positioned before
-        # their consumers. Nodes within a layer are ordered by the average
-        # vertical position of their predecessors (barycenter heuristic).
-        for l in sorted(per_layer):
-            nodes = per_layer[l]
-            if l == 0:
-                ordered = sorted(nodes)
-            else:
-                def barycenter(n: str) -> float:
-                    preds = list(G.predecessors(n))
-                    if not preds:
-                        return 0.0
-                    return sum(pos[p][1] for p in preds) / len(preds)
-
-                ordered = sorted(nodes, key=lambda n: (barycenter(n), n))
-
-            for i, n in enumerate(ordered):
-                pos[n] = (float(l), -float(i))
-
-        fig, ax = plt.subplots(figsize=(10, 6))
-        node_w, node_h = 0.8, 0.5
-
-        for n, (x, y) in pos.items():
-            rect = plt.Rectangle((x - node_w / 2, y - node_h / 2), node_w, node_h,
-                                 facecolor="#A7D3F3", edgecolor="black")
-            ax.add_patch(rect)
-            ax.text(x, y, labels.get(n, ""), ha="center", va="center", fontsize=8)
-
-        for u, v, data in G.edges(data=True):
-            x1, y1 = pos[u]
-            x2, y2 = pos[v]
-            start_x = x1 + node_w / 2
-            end_x = x2 - node_w / 2
-            mid_x = (start_x + end_x) / 2
-            ax.plot([start_x, mid_x], [y1, y1], color="black")
-            ax.plot([mid_x, mid_x], [y1, y2], color="black")
-            ax.annotate("", xy=(end_x, y2), xytext=(mid_x, y2),
-                        arrowprops=dict(arrowstyle="->", color="black"))
-            if data.get("label"):
-                ax.text(mid_x, (y1 + y2) / 2, data["label"], fontsize=7,
-                        ha="right", va="center")
-
+        fig, ax = plt.subplots(figsize=(img.width / 80, img.height / 80))
+        ax.imshow(img)
         ax.axis("off")
-        ax.set_xlim(-1, max(x for x, _ in pos.values()) + 1)
-        ax.set_ylim(min(y for _, y in pos.values()) - 1,
-                    max(y for _, y in pos.values()) + 1)
         plt.tight_layout()
         plt.show()
 
