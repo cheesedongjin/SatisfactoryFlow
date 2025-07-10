@@ -65,8 +65,14 @@ class ConsoleApp:
                 break
             lines.append(ln)
         outputs = parse_lines("\n".join(lines))
-        clock = float(input("Clock Speed % (default 100): ").strip() or 100)
         shards = int(input("Power Shards (default 0): ").strip() or 0)
+        max_clock = min(250.0, 100.0 + shards * 50.0)
+        clock = float(input(f"Clock Speed % (0-{max_clock}): ").strip() or 100)
+        if clock > max_clock:
+            print(f"Clock speed limited to {max_clock}% due to shards")
+            clock = max_clock
+        clock = round(clock, 4)
+        
         filled = int(input("Filled Slots (default 0): ").strip() or 0)
         total = int(input("Total Slots (default 0): ").strip() or 0)
         node = Node(name, base_power, inputs, outputs, clock, shards, filled, total)
