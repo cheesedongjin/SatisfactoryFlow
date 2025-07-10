@@ -130,13 +130,29 @@ class App(tk.Tk):
         for n in G.nodes():
             layer.setdefault(n, max_layer)
 
-        # assign positions: x by layer, y by index within layer
+        # assign positions: x by layer, y to group inputs near their consumers
         per_layer: Dict[int, List[str]] = {}
         for n, l in layer.items():
             per_layer.setdefault(l, []).append(n)
+
         pos: Dict[str, tuple[float, float]] = {}
-        for l, nodes in per_layer.items():
-            for i, n in enumerate(sorted(nodes)):
+        # process layers from left to right so predecessors are positioned before
+        # their consumers. Nodes within a layer are ordered by the average
+        # vertical position of their predecessors (barycenter heuristic).
+        for l in sorted(per_layer):
+            nodes = per_layer[l]
+            if l == 0:
+                ordered = sorted(nodes)
+            else:
+                def barycenter(n: str) -> float:
+                    preds = list(G.predecessors(n))
+                    if not preds:
+                        return 0.0
+                    return sum(pos[p][1] for p in preds) / len(preds)
+
+                ordered = sorted(nodes, key=lambda n: (barycenter(n), n))
+
+            for i, n in enumerate(ordered):
                 pos[n] = (float(l), -float(i))
 
         fig, ax = plt.subplots(figsize=(10, 6))
