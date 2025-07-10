@@ -5,7 +5,7 @@ The application allows you to create "nodes" representing production buildings o
 
 Features
 --------
-- Add/edit/delete nodes with custom inputs, outputs and base power usage.
+- Generate nodes automatically via **Auto Build**.
 - Support for clock speeds from 0% to 250% with the Satisfactory overclocking power formula. The
   allowed maximum clock speed is automatically limited to `100% + 50% × shards` (capped at 250%).
 - Clock speeds are stored with four decimal places of precision.
@@ -14,6 +14,7 @@ Features
 - Save and load a workspace automatically (`workspace.json`).
 - Toggle unavailable alternate recipes via the **Recipes** button (saved in the workspace).
 - Visualize node connections with a simple graph using NetworkX and Matplotlib.
+- Workspace is automatically saved when using **Show Graph**.
 - Shortcut **Ctrl+S** or the *Save* button to store the current workspace.
 
 Run the tool with:
