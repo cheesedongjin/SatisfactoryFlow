@@ -17,6 +17,9 @@ Run the tool with:
 python3 satisfactory_flow_gui.py
 ```
 
+The GUI and models are now organized under the `satisfactory_flow` package.
+`satisfactory_flow_gui.py` simply launches the app.
+
 ## Data files
 
 The `data/` directory contains JSON files generated from the [Official Satisfactory Wiki](https://satisfactory.wiki.gg) templates. Only the fields relevant to this tool are kept and logistic supports are omitted:
