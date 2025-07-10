@@ -11,6 +11,7 @@ Features
 - Clock speeds are stored with four decimal places of precision.
 - Optional Somersloop style power multiplier using filled and total slot counts.
 - Save and load a workspace automatically (`workspace.json`).
+- Toggle unavailable alternate recipes via the **Recipes** button (saved in the workspace).
 - Visualize node connections with a simple graph using NetworkX and Matplotlib.
 - Shortcut **Ctrl+S** or the *Save* button to store the current workspace.
 

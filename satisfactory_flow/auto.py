@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List
+from typing import Dict, List, Set
 
 from .models import Node
 
@@ -14,9 +14,14 @@ with open(os.path.join(DATA_DIR, 'buildings.json'), 'r', encoding='utf-8') as f:
     BUILDINGS: Dict[str, Dict] = json.load(f)
 
 
-def _map_recipes() -> Dict[str, Dict]:
+DISABLED_RECIPES: Set[str] = set()
+
+
+def _map_recipes(disabled: Set[str] | None = None) -> Dict[str, Dict]:
     mapping: Dict[str, Dict] = {}
-    for data in RECIPES.values():
+    for cls, data in RECIPES.items():
+        if disabled and cls in disabled:
+            continue
         for prod in data.get('products', []):
             item = prod['item']
             if item not in mapping or mapping[item].get('alternate'):
@@ -28,6 +33,13 @@ def _map_recipes() -> Dict[str, Dict]:
 
 
 RECIPES_BY_OUTPUT = _map_recipes()
+
+
+def set_disabled_recipes(disabled: Set[str]) -> None:
+    """Update globally disabled recipes and rebuild the recipe mapping."""
+    global DISABLED_RECIPES, RECIPES_BY_OUTPUT
+    DISABLED_RECIPES = set(disabled)
+    RECIPES_BY_OUTPUT = _map_recipes(DISABLED_RECIPES)
 
 
 def _gen_nodes(item_id: str, rate: float, nodes: List[Node], seen: set[str] | None = None) -> None:
