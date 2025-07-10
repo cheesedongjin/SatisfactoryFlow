@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Dict
+from typing import List, Dict, Set
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import networkx as nx
@@ -9,7 +9,7 @@ from networkx.drawing.nx_agraph import to_agraph
 import tempfile
 
 from .models import Node
-from .auto import generate_workspace
+from .auto import generate_workspace, set_disabled_recipes
 
 WORKSPACE_FILE = "workspace.json"
 
@@ -18,6 +18,8 @@ class App(tk.Tk):
         super().__init__()
         self.title("Satisfactory Flow")
         self.nodes: List[Node] = []
+        self.disabled_recipes: Set[str] = set()
+        set_disabled_recipes(self.disabled_recipes)
         self._create_widgets()
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.load_workspace()
@@ -31,6 +33,7 @@ class App(tk.Tk):
         ttk.Button(toolbar, text="Show Graph", command=self.show_graph).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Save", command=self.save_workspace).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Auto Build", command=self.auto_build).pack(side=tk.LEFT)
+        ttk.Button(toolbar, text="Recipes", command=self.manage_recipes).pack(side=tk.LEFT)
 
         self.node_list = tk.Listbox(self)
         self.node_list.pack(fill=tk.BOTH, expand=True)
@@ -77,6 +80,13 @@ class App(tk.Tk):
         self.nodes = generate_workspace(res['item_id'], res['rate'])
         self.refresh_list()
 
+    def manage_recipes(self) -> None:
+        dlg = RecipeDialog(self, self.disabled_recipes)
+        res = dlg.result
+        if res is not None:
+            self.disabled_recipes = res
+            set_disabled_recipes(self.disabled_recipes)
+
     def build_graph(self) -> nx.DiGraph:
         G = nx.DiGraph()
         for idx, node in enumerate(self.nodes):
@@ -106,7 +116,10 @@ class App(tk.Tk):
         os.unlink(tmp.name)
 
     def save_workspace(self) -> None:
-        data = [n.to_dict() for n in self.nodes]
+        data = {
+            "nodes": [n.to_dict() for n in self.nodes],
+            "disabled_recipes": list(self.disabled_recipes),
+        }
         with open(WORKSPACE_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         messagebox.showinfo("Saved", "Workspace saved")
@@ -115,7 +128,13 @@ class App(tk.Tk):
         if os.path.exists(WORKSPACE_FILE):
             with open(WORKSPACE_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            self.nodes = [Node.from_dict(d) for d in data]
+            if isinstance(data, list):
+                self.nodes = [Node.from_dict(d) for d in data]
+                self.disabled_recipes = set()
+            else:
+                self.nodes = [Node.from_dict(d) for d in data.get("nodes", [])]
+                self.disabled_recipes = set(data.get("disabled_recipes", []))
+            set_disabled_recipes(self.disabled_recipes)
             self.refresh_list()
 
     def on_close(self) -> None:
@@ -267,5 +286,38 @@ class AutoDialog(simpledialog.Dialog):
         item_id = self.name_map[item_name]
         rate = float(self.rate.get())
         self.result = {'item_id': item_id, 'rate': rate}
+
+
+class RecipeDialog(simpledialog.Dialog):
+    def __init__(self, master: tk.Misc, disabled: Set[str]):
+        self.disabled = set(disabled)
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'recipes.json'), 'r', encoding='utf-8') as f:
+            self.recipes = json.load(f)
+        super().__init__(master, title='Disabled Recipes')
+
+    def body(self, frame: tk.Frame) -> None:
+        canvas = tk.Canvas(frame, width=400, height=300)
+        scrollbar = ttk.Scrollbar(frame, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        inner = ttk.Frame(canvas)
+        canvas.create_window((0, 0), window=inner, anchor='nw')
+        inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+
+        self.vars: Dict[str, tk.BooleanVar] = {}
+        row = 0
+        for r_id, rec in sorted(self.recipes.items(), key=lambda x: x[1]['name']):
+            if not rec.get('alternate'):
+                continue
+            var = tk.BooleanVar(value=r_id in self.disabled)
+            chk = ttk.Checkbutton(inner, text=rec['name'], variable=var)
+            chk.grid(row=row, column=0, sticky='w')
+            self.vars[r_id] = var
+            row += 1
+
+    def apply(self) -> None:
+        self.result = {rid for rid, var in self.vars.items() if var.get()}
 
 

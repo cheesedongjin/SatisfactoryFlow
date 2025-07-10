@@ -3,6 +3,7 @@ import os
 from typing import Dict, List
 
 from .models import Node
+from .auto import set_disabled_recipes
 
 WORKSPACE_FILE = "workspace.json"
 
@@ -25,16 +26,26 @@ def parse_lines(text: str) -> Dict[str, float]:
 class ConsoleApp:
     def __init__(self) -> None:
         self.nodes: List[Node] = []
+        self.disabled_recipes: set[str] = set()
         self.load_workspace()
 
     def load_workspace(self) -> None:
         if os.path.exists(WORKSPACE_FILE):
             with open(WORKSPACE_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            self.nodes = [Node.from_dict(d) for d in data]
+            if isinstance(data, list):
+                self.nodes = [Node.from_dict(d) for d in data]
+                self.disabled_recipes = set()
+            else:
+                self.nodes = [Node.from_dict(d) for d in data.get("nodes", [])]
+                self.disabled_recipes = set(data.get("disabled_recipes", []))
+            set_disabled_recipes(self.disabled_recipes)
 
     def save_workspace(self) -> None:
-        data = [n.to_dict() for n in self.nodes]
+        data = {
+            "nodes": [n.to_dict() for n in self.nodes],
+            "disabled_recipes": list(self.disabled_recipes),
+        }
         with open(WORKSPACE_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         print("Workspace saved")
@@ -87,6 +98,29 @@ class ConsoleApp:
         else:
             print("Invalid index")
 
+    def edit_recipes(self) -> None:
+        with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'recipes.json'), 'r', encoding='utf-8') as f:
+            recs = json.load(f)
+        alt = {rid: r['name'] for rid, r in recs.items() if r.get('alternate')}
+        items = sorted(alt.items(), key=lambda x: x[1])
+        for idx, (rid, name) in enumerate(items):
+            mark = '*' if rid in self.disabled_recipes else ' '
+            print(f"{idx}: [{mark}] {name}")
+        sel = input("Indices to toggle (space separated, blank to finish): ").strip()
+        if not sel:
+            return
+        for part in sel.split():
+            try:
+                i = int(part)
+                rid, _ = items[i]
+                if rid in self.disabled_recipes:
+                    self.disabled_recipes.remove(rid)
+                else:
+                    self.disabled_recipes.add(rid)
+            except (ValueError, IndexError):
+                pass
+        set_disabled_recipes(self.disabled_recipes)
+
     def run(self) -> None:
         print("Satisfactory Flow Console")
         while True:
@@ -95,13 +129,15 @@ class ConsoleApp:
                 self.save_workspace()
                 break
             elif cmd == "help":
-                print("Commands: list, add, delete, save, load, quit")
+                print("Commands: list, add, delete, recipes, save, load, quit")
             elif cmd == "list":
                 self.list_nodes()
             elif cmd == "add":
                 self.add_node()
             elif cmd == "delete":
                 self.delete_node()
+            elif cmd == "recipes":
+                self.edit_recipes()
             elif cmd == "save":
                 self.save_workspace()
             elif cmd == "load":
