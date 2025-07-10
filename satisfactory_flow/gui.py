@@ -78,7 +78,8 @@ class App(tk.Tk):
         res = dlg.result
         if not res:
             return
-        self.nodes = generate_workspace(res['item_id'], res['rate'])
+        sources = set(res.get('sources', []))
+        self.nodes = generate_workspace(res['item_id'], res['rate'], sources)
         self.refresh_list()
 
     def manage_recipes(self) -> None:
@@ -290,6 +291,13 @@ class AutoDialog(simpledialog.Dialog):
         self.shards.grid(row=3, column=1)
         self.shards.insert(0, '0')
 
+        ttk.Label(frame, text='Source Items').grid(row=4, column=0, sticky='nw')
+        self.source_frame = ttk.Frame(frame)
+        self.source_frame.grid(row=4, column=1, sticky='w')
+        self.source_boxes: List[ttk.Combobox] = []
+        self._add_source_row()
+        ttk.Button(frame, text='+', command=self._add_source_row).grid(row=5, column=1, sticky='w')
+
         return self.rate
 
     def validate(self) -> bool:
@@ -302,17 +310,42 @@ class AutoDialog(simpledialog.Dialog):
             return False
         return True
 
+    def _add_source_row(self) -> None:
+        row = ttk.Frame(self.source_frame)
+        names = sorted(self.name_map.keys())
+        cb = ttk.Combobox(row, values=names, state='readonly')
+        if names:
+            cb.set(names[0])
+        cb.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        btn = ttk.Button(row, text='-', command=lambda r=row: self._remove_source_row(r))
+        btn.pack(side=tk.LEFT)
+        row.pack(fill=tk.X, pady=2)
+        self.source_boxes.append((row, cb))
+
+    def _remove_source_row(self, row: ttk.Frame) -> None:
+        for i, (r, cb) in enumerate(self.source_boxes):
+            if r == row:
+                r.destroy()
+                self.source_boxes.pop(i)
+                break
+
     def apply(self) -> None:
         item_name = self.cb.get()
         item_id = self.name_map[item_name]
         rate = float(self.rate.get())
         loops = int(self.somers.get())
         shards = int(self.shards.get())
+        source_ids = []
+        for _row, cb in self.source_boxes:
+            name = cb.get()
+            if name in self.name_map:
+                source_ids.append(self.name_map[name])
         self.result = {
             'item_id': item_id,
             'rate': rate,
             'max_loops': loops,
             'max_shards': shards,
+            'sources': source_ids,
         }
 
 
