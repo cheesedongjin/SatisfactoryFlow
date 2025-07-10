@@ -1,0 +1,140 @@
+{
+  "Desc_GeneratorCoal_C": {
+    "name": "Coal-Powered Generator",
+    "powerGenerated": 75,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "burnsFuel": [
+      {
+        "fuel": "Desc_Coal_C",
+        "supplement": "Desc_Water_C",
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_CompactedCoal_C",
+        "supplement": "Desc_Water_C",
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_PetroleumCoke_C",
+        "supplement": "Desc_Water_C",
+        "byproduct": null,
+        "byproductAmount": 0
+      }
+    ],
+    "supplementPerMinute": 45
+  },
+  "Desc_GeneratorNuclear_C": {
+    "name": "Nuclear Power Plant",
+    "powerGenerated": 2500,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "burnsFuel": [
+      {
+        "fuel": "Desc_NuclearFuelRod_C",
+        "supplement": "Desc_Water_C",
+        "byproduct": "Desc_NuclearWaste_C",
+        "byproductAmount": 50
+      },
+      {
+        "fuel": "Desc_PlutoniumFuelRod_C",
+        "supplement": "Desc_Water_C",
+        "byproduct": "Desc_PlutoniumWaste_C",
+        "byproductAmount": 10
+      },
+      {
+        "fuel": "Desc_FicsoniumFuelRod_C",
+        "supplement": "Desc_Water_C",
+        "byproduct": null,
+        "byproductAmount": 0
+      }
+    ],
+    "supplementPerMinute": 240
+  },
+  "Desc_GeneratorFuel_C": {
+    "name": "Fuel-Powered Generator",
+    "powerGenerated": 250,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "burnsFuel": [
+      {
+        "fuel": "Desc_LiquidFuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_LiquidTurboFuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_LiquidBiofuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_RocketFuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_IonizedFuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      }
+    ],
+    "supplementPerMinute": 0
+  },
+  "Desc_GeneratorBiomass_Automated_C": {
+    "name": "Biomass Burner",
+    "powerGenerated": 30,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "burnsFuel": [
+      {
+        "fuel": "Desc_Leaves_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_Wood_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_Mycelia_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_GenericBiomass_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_Biofuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      },
+      {
+        "fuel": "Desc_PackagedBiofuel_C",
+        "supplement": null,
+        "byproduct": null,
+        "byproductAmount": 0
+      }
+    ],
+    "supplementPerMinute": 0
+  }
+}

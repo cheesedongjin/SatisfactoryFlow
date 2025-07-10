@@ -1,0 +1,148 @@
+{
+  "Desc_WaterPump_C": {
+    "name": "Water Extractor",
+    "powerUsage": 20,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "Desc_QuantumEncoder_C": {
+    "name": "Quantum Encoder",
+    "powerUsage": 0,
+    "somersloopSlots": 4,
+    "overclockable": true,
+    "inputs": 4,
+    "outputs": 2,
+    "minPower": 0,
+    "maxPower": 2000
+  },
+  "Desc_Converter_C": {
+    "name": "Converter",
+    "powerUsage": 0,
+    "somersloopSlots": 2,
+    "overclockable": true,
+    "inputs": 2,
+    "outputs": 2,
+    "minPower": 100,
+    "maxPower": 400
+  },
+  "Desc_OilPump_C": {
+    "name": "Oil Extractor",
+    "powerUsage": 40,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "Desc_OilRefinery_C": {
+    "name": "Refinery",
+    "powerUsage": 30,
+    "somersloopSlots": 2,
+    "overclockable": true,
+    "inputs": 2,
+    "outputs": 2
+  },
+  "Desc_FoundryMk1_C": {
+    "name": "Foundry",
+    "powerUsage": 16,
+    "somersloopSlots": 2,
+    "overclockable": true,
+    "inputs": 2,
+    "outputs": 1
+  },
+  "Desc_Packager_C": {
+    "name": "Packager",
+    "powerUsage": 10,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 2,
+    "outputs": 2
+  },
+  "Desc_MinerMk2_C": {
+    "name": "Miner Mk.2",
+    "powerUsage": 15,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "Desc_ManufacturerMk1_C": {
+    "name": "Manufacturer",
+    "powerUsage": 55,
+    "somersloopSlots": 4,
+    "overclockable": true,
+    "inputs": 4,
+    "outputs": 1,
+    "minPower": 0,
+    "maxPower": 1500
+  },
+  "Desc_AssemblerMk1_C": {
+    "name": "Assembler",
+    "powerUsage": 15,
+    "somersloopSlots": 2,
+    "overclockable": true,
+    "inputs": 2,
+    "outputs": 1
+  },
+  "Desc_HadronCollider_C": {
+    "name": "Particle Accelerator",
+    "powerUsage": 0,
+    "somersloopSlots": 4,
+    "overclockable": true,
+    "inputs": 3,
+    "outputs": 1,
+    "minPower": 250,
+    "maxPower": 1500
+  },
+  "Desc_Blender_C": {
+    "name": "Blender",
+    "powerUsage": 75,
+    "somersloopSlots": 4,
+    "overclockable": true,
+    "inputs": 4,
+    "outputs": 2,
+    "minPower": 500,
+    "maxPower": 1500
+  },
+  "Desc_FrackingSmasher_C": {
+    "name": "Resource Well Pressurizer",
+    "powerUsage": 150,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "Desc_MinerMk3_C": {
+    "name": "Miner Mk.3",
+    "powerUsage": 45,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "Desc_MinerMk1_C": {
+    "name": "Miner Mk.1",
+    "powerUsage": 5,
+    "somersloopSlots": 0,
+    "overclockable": true,
+    "inputs": 0,
+    "outputs": 1
+  },
+  "Desc_ConstructorMk1_C": {
+    "name": "Constructor",
+    "powerUsage": 4,
+    "somersloopSlots": 1,
+    "overclockable": true,
+    "inputs": 1,
+    "outputs": 1
+  },
+  "Desc_SmelterMk1_C": {
+    "name": "Smelter",
+    "powerUsage": 4,
+    "somersloopSlots": 1,
+    "overclockable": true,
+    "inputs": 1,
+    "outputs": 1
+  }
+}
