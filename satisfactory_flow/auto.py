@@ -22,23 +22,54 @@ DISABLED_RECIPES: Set[str] = set()
 
 
 def _map_recipes(disabled: Set[str] | None = None) -> Dict[str, Dict]:
-    mapping: Dict[str, Dict] = {}
+    """Return best recipe choice for each item.
+
+    Packaging and unpackaging recipes are ignored when a non-packaging recipe
+    exists for the same item. If an item only has packaging related recipes,
+    prefer the one that does not directly feed on the item itself. Otherwise the
+    item is treated as a raw resource.
+    """
+
+    # Collect candidate recipes per item first
+    by_item: Dict[str, List[Dict]] = {}
     for cls, data in RECIPES.items():
         if disabled and cls in disabled:
             continue
-        # Skip the "Converter" recipes that transform resources using
-        # S.A.M. ingots. These lead to loops where raw ores are produced
-        # from themselves instead of being treated as simple resource
-        # nodes.
         if "Desc_Converter_C" in data.get("producedIn", []):
             continue
-        for prod in data.get('products', []):
-            item = prod['item']
-            if item not in mapping or mapping[item].get('alternate'):
-                if not data.get('alternate'):
-                    mapping[item] = data
-                elif item not in mapping:
-                    mapping[item] = data
+        for prod in data.get("products", []):
+            by_item.setdefault(prod["item"], []).append(data)
+
+    mapping: Dict[str, Dict] = {}
+
+    def is_packaging(rec: Dict) -> bool:
+        name = rec.get("name", "").lower()
+        return name.startswith("packaged ") or name.startswith("unpackage")
+
+    for item, recs in by_item.items():
+        item_name = ITEMS.get(item, {}).get("name", "")
+        non_pack = [r for r in recs if not is_packaging(r)]
+        if non_pack:
+            candidates = non_pack
+        else:
+            if item_name.lower().startswith("packaged "):
+                pack_recs = [r for r in recs if r.get("name", "").lower().startswith("packaged ")]
+                if not pack_recs:
+                    continue
+                candidates = pack_recs
+            else:
+                continue  # treat as raw resource
+
+        # Prefer non-alternate recipes
+        best = None
+        for r in candidates:
+            if not r.get("alternate"):
+                best = r
+                break
+        if best is None:
+            best = candidates[0]
+        mapping[item] = best
+
     return mapping
 
 
