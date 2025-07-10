@@ -17,6 +17,9 @@ Run the tool with:
 python3 satisfactory_flow_gui.py
 ```
 
+If a graphical display cannot be detected the launcher will automatically
+start a simple console interface instead.
+
 The GUI and models are now organized under the `satisfactory_flow` package.
 `satisfactory_flow_gui.py` simply launches the app.
 
