@@ -1,0 +1,5 @@
+networkx
+matplotlib
+requests
+pydot
+pillow
