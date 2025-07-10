@@ -83,9 +83,26 @@ def set_disabled_recipes(disabled: Set[str]) -> None:
     RECIPES_BY_OUTPUT = _map_recipes(DISABLED_RECIPES)
 
 
-def _gen_nodes(item_id: str, rate: float, nodes: List[Node], seen: set[str] | None = None) -> None:
+def _gen_nodes(
+    item_id: str,
+    rate: float,
+    nodes: List[Node],
+    seen: set[str] | None = None,
+    sources: Set[str] | None = None,
+) -> None:
     if seen is None:
         seen = set()
+    if sources and item_id in sources:
+        item_name = ITEMS.get(item_id, {}).get("name", item_id)
+        nodes.append(
+            Node(
+                name=f"Source {item_name}",
+                base_power=0.0,
+                inputs={},
+                outputs={item_name: rate},
+            )
+        )
+        return
     if item_id in seen:
         item_name = ITEMS.get(item_id, {}).get('name', item_id)
         nodes.append(Node(name=f"Loop {item_name}", base_power=0.0, inputs={}, outputs={item_name: rate}))
@@ -132,12 +149,14 @@ def _gen_nodes(item_id: str, rate: float, nodes: List[Node], seen: set[str] | No
         ing_rate = machines * ing['amount'] * 60.0 / recipe['duration']
         ing_name = ITEMS.get(ing_id, {}).get('name', ing_id)
         node.inputs[ing_name] = ing_rate
-        _gen_nodes(ing_id, ing_rate, nodes, seen.copy())
+        _gen_nodes(ing_id, ing_rate, nodes, seen.copy(), sources)
 
 
-def generate_workspace(item_id: str, rate: float) -> List[Node]:
+def generate_workspace(
+    item_id: str, rate: float, sources: Set[str] | None = None
+) -> List[Node]:
     nodes: List[Node] = []
-    _gen_nodes(item_id, rate, nodes, set())
+    _gen_nodes(item_id, rate, nodes, set(), sources)
     nodes = _merge_nodes(nodes)
     return nodes
 
