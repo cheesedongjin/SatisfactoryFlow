@@ -27,14 +27,21 @@ start a simple console interface instead.
 
 ### Requirements
 
-Install the following packages before running the tool:
+Install the Python dependencies first:
 
 ```bash
 pip install networkx matplotlib requests pydot pillow
+```
+
+You also need the Graphviz system package:
+
+```bash
 sudo apt-get install graphviz
 ```
 
-Graphviz is used to draw the node graph without overlapping edges.
+Graphviz is used to draw the node graph without overlapping edges. If you want
+to use the optional PyGraphviz bindings, see the [PyGraphviz installation
+guide](https://pygraphviz.github.io/documentation/stable/install.html).
 
 The GUI and models are now organized under the `satisfactory_flow` package.
 `satisfactory_flow_gui.py` simply launches the app.
