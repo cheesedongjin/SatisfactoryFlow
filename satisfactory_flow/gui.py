@@ -337,8 +337,6 @@ class RecipeDialog(simpledialog.Dialog):
         self.vars: Dict[str, tk.BooleanVar] = {}
         row = 0
         for r_id, rec in sorted(self.recipes.items(), key=lambda x: x[1]['name']):
-            if not rec.get('alternate'):
-                continue
             var = tk.BooleanVar(value=r_id in self.disabled)
             chk = ttk.Checkbutton(inner, text=rec['name'], variable=var)
             chk.grid(row=row, column=0, sticky='w')
