@@ -86,30 +86,86 @@ class App(tk.Tk):
             set_disabled_recipes(self.disabled_recipes)
 
     def build_graph(self) -> nx.DiGraph:
+        """Return a directed graph of all nodes with duplicates for ``count``."""
         G = nx.DiGraph()
+        node_map: List[tuple[str, Node]] = []
         for idx, node in enumerate(self.nodes):
-            label = f"{node.name}\n{node.clock:.1f}%"
-            G.add_node(idx, label=label)
-        for src_idx, src in enumerate(self.nodes):
-            for item in src.outputs:
-                for dst_idx, dst in enumerate(self.nodes):
-                    if src_idx == dst_idx:
-                        continue
-                    if item in dst.inputs:
-                        G.add_edge(src_idx, dst_idx, label=item)
+            cnt = max(1, int(round(node.count)))
+            for i in range(cnt):
+                node_id = f"{idx}_{i}"
+                label = f"{node.name}\n{node.clock:.1f}%"
+                G.add_node(node_id, label=label)
+                node_map.append((node_id, node))
+
+        for src_id, src_node in node_map:
+            for dst_id, dst_node in node_map:
+                if src_id == dst_id:
+                    continue
+                for item in src_node.outputs:
+                    if item in dst_node.inputs:
+                        G.add_edge(src_id, dst_id, label=item)
         return G
 
     def show_graph(self) -> None:
+        """Display a left-to-right graph with orthogonal edges."""
         G = self.build_graph()
-        node_labels = nx.get_node_attributes(G, "label")
-        edge_labels = nx.get_edge_attributes(G, "label")
-        pos = nx.spring_layout(G)
-        plt.figure(figsize=(8, 6))
-        nx.draw(G, pos, labels=node_labels, with_labels=True, node_size=1500,
-                node_color="#A7D3F3", arrows=True, font_size=8)
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels,
-                                     font_size=8)
-        plt.axis("off")
+        labels = nx.get_node_attributes(G, "label")
+
+        # compute layers from sources to sinks
+        indeg = {n: G.in_degree(n) for n in G.nodes()}
+        layer: Dict[str, int] = {}
+        queue = [n for n, d in indeg.items() if d == 0]
+        for n in queue:
+            layer[n] = 0
+        visited = set(queue)
+        while queue:
+            n = queue.pop(0)
+            for succ in G.successors(n):
+                layer[succ] = max(layer.get(succ, 0), layer[n] + 1)
+                indeg[succ] -= 1
+                if indeg[succ] == 0 and succ not in visited:
+                    visited.add(succ)
+                    queue.append(succ)
+        max_layer = max(layer.values(), default=0)
+        for n in G.nodes():
+            layer.setdefault(n, max_layer)
+
+        # assign positions: x by layer, y by index within layer
+        per_layer: Dict[int, List[str]] = {}
+        for n, l in layer.items():
+            per_layer.setdefault(l, []).append(n)
+        pos: Dict[str, tuple[float, float]] = {}
+        for l, nodes in per_layer.items():
+            for i, n in enumerate(sorted(nodes)):
+                pos[n] = (float(l), -float(i))
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        node_w, node_h = 0.8, 0.5
+
+        for n, (x, y) in pos.items():
+            rect = plt.Rectangle((x - node_w / 2, y - node_h / 2), node_w, node_h,
+                                 facecolor="#A7D3F3", edgecolor="black")
+            ax.add_patch(rect)
+            ax.text(x, y, labels.get(n, ""), ha="center", va="center", fontsize=8)
+
+        for u, v, data in G.edges(data=True):
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            start_x = x1 + node_w / 2
+            end_x = x2 - node_w / 2
+            mid_x = (start_x + end_x) / 2
+            ax.plot([start_x, mid_x], [y1, y1], color="black")
+            ax.plot([mid_x, mid_x], [y1, y2], color="black")
+            ax.annotate("", xy=(end_x, y2), xytext=(mid_x, y2),
+                        arrowprops=dict(arrowstyle="->", color="black"))
+            if data.get("label"):
+                ax.text(mid_x, (y1 + y2) / 2, data["label"], fontsize=7,
+                        ha="right", va="center")
+
+        ax.axis("off")
+        ax.set_xlim(-1, max(x for x, _ in pos.values()) + 1)
+        ax.set_ylim(min(y for _, y in pos.values()) - 1,
+                    max(y for _, y in pos.values()) + 1)
         plt.tight_layout()
         plt.show()
 
