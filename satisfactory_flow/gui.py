@@ -28,9 +28,6 @@ class App(tk.Tk):
     def _create_widgets(self) -> None:
         toolbar = ttk.Frame(self)
         toolbar.pack(side=tk.TOP, fill=tk.X)
-        ttk.Button(toolbar, text="Add Node", command=self.add_node).pack(side=tk.LEFT)
-        ttk.Button(toolbar, text="Edit Node", command=self.edit_node).pack(side=tk.LEFT)
-        ttk.Button(toolbar, text="Delete Node", command=self.delete_node).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Show Graph", command=self.show_graph).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Save", command=self.save_workspace).pack(side=tk.LEFT)
         ttk.Button(toolbar, text="Auto Build", command=self.auto_build).pack(side=tk.LEFT)
@@ -46,32 +43,6 @@ class App(tk.Tk):
         for node in self.nodes:
             self.node_list.insert(tk.END, f"{node.name} | Power {node.power_usage():.2f} MW")
 
-    def add_node(self) -> None:
-        dlg = NodeDialog(self)
-        node = dlg.result
-        if node:
-            self.nodes.append(node)
-            self.refresh_list()
-
-    def edit_node(self) -> None:
-        sel = self.node_list.curselection()
-        if not sel:
-            return
-        idx = sel[0]
-        node = self.nodes[idx]
-        dlg = NodeDialog(self, node)
-        new_node = dlg.result
-        if new_node:
-            self.nodes[idx] = new_node
-            self.refresh_list()
-
-    def delete_node(self) -> None:
-        sel = self.node_list.curselection()
-        if not sel:
-            return
-        idx = sel[0]
-        del self.nodes[idx]
-        self.refresh_list()
 
     def auto_build(self) -> None:
         dlg = AutoDialog(self)
@@ -117,6 +88,8 @@ class App(tk.Tk):
 
     def show_graph(self) -> None:
         """Display the graph using Graphviz to avoid overlaps."""
+        # Save workspace before showing the graph
+        self.save_workspace()
         G = self.build_graph()
 
         # Convert to pydot graph and configure appearance
@@ -162,107 +135,6 @@ class App(tk.Tk):
     def on_close(self) -> None:
         self.save_workspace()
         self.destroy()
-
-class NodeDialog(simpledialog.Dialog):
-    def __init__(self, master: tk.Misc, node: Node | None = None):
-        self.node = node
-        super().__init__(master, title="Node")
-
-    def body(self, frame: tk.Frame) -> tk.Entry:
-        self.vars: Dict[str, tk.Widget] = {}
-        ttk.Label(frame, text="Name").grid(row=0, column=0)
-        self.vars['name'] = tk.Entry(frame)
-        self.vars['name'].grid(row=0, column=1)
-
-        ttk.Label(frame, text="Base Power").grid(row=1, column=0)
-        self.vars['base_power'] = tk.Entry(frame)
-        self.vars['base_power'].grid(row=1, column=1)
-
-        ttk.Label(frame, text="Inputs (item:qty, comma separated per line)").grid(row=2, column=0)
-        self.vars['inputs'] = tk.Text(frame, width=30, height=4)
-        self.vars['inputs'].grid(row=2, column=1)
-
-        ttk.Label(frame, text="Outputs (item:qty, comma separated per line)").grid(row=3, column=0)
-        self.vars['outputs'] = tk.Text(frame, width=30, height=4)
-        self.vars['outputs'].grid(row=3, column=1)
-
-        ttk.Label(frame, text="Clock Speed %").grid(row=4, column=0)
-        self.vars['clock'] = tk.Entry(frame)
-        self.vars['clock'].grid(row=4, column=1)
-
-        ttk.Label(frame, text="Power Shards").grid(row=5, column=0)
-        self.vars['shards'] = tk.Entry(frame)
-        self.vars['shards'].grid(row=5, column=1)
-
-        ttk.Label(frame, text="Filled Slots").grid(row=6, column=0)
-        self.vars['filled'] = tk.Entry(frame)
-        self.vars['filled'].grid(row=6, column=1)
-
-        ttk.Label(frame, text="Total Slots").grid(row=7, column=0)
-        self.vars['total'] = tk.Entry(frame)
-        self.vars['total'].grid(row=7, column=1)
-
-        if self.node:
-            self.vars['name'].insert(0, self.node.name)
-            self.vars['base_power'].insert(0, str(self.node.base_power))
-            self.vars['inputs'].insert('1.0', "\n".join(f"{k}:{v}" for k, v in self.node.inputs.items()))
-            self.vars['outputs'].insert('1.0', "\n".join(f"{k}:{v}" for k, v in self.node.outputs.items()))
-            self.vars['clock'].insert(0, str(self.node.clock))
-            self.vars['shards'].insert(0, str(self.node.shards))
-            self.vars['filled'].insert(0, str(self.node.filled_slots))
-            self.vars['total'].insert(0, str(self.node.total_slots))
-        else:
-            self.vars['clock'].insert(0, "100.0")
-            self.vars['shards'].insert(0, "0")
-            self.vars['filled'].insert(0, "0")
-            self.vars['total'].insert(0, "0")
-
-        return self.vars['name']
-
-    def validate(self) -> bool:
-        try:
-            shards = int(self.vars['shards'].get())
-            base_power = float(self.vars['base_power'].get())
-            clock = float(self.vars['clock'].get())
-            max_clock = min(250.0, 100.0 + shards * 50.0)
-            if clock < 0 or clock > max_clock:
-                raise ValueError
-        except ValueError:
-            messagebox.showerror(
-                "Error",
-                f"Invalid numeric input or clock exceeds limit ({max_clock:.1f}%)",
-            )
-            return False
-        return True
-
-    def apply(self) -> None:
-        def parse(text: str) -> Dict[str, float]:
-            lines = text.strip().splitlines()
-            result: Dict[str, float] = {}
-            for line in lines:
-                if not line.strip():
-                    continue
-                parts = line.split(',')
-                for p in parts:
-                    if ':' in p:
-                        item, qty = p.split(':', 1)
-                        try:
-                            result[item.strip()] = float(qty)
-                        except ValueError:
-                            pass
-            return result
-
-        self.result = Node(
-            name=self.vars['name'].get(),
-            base_power=float(self.vars['base_power'].get()),
-            inputs=parse(self.vars['inputs'].get('1.0', 'end')),
-            outputs=parse(self.vars['outputs'].get('1.0', 'end')),
-            clock=round(float(self.vars['clock'].get()), 4),
-            shards=int(self.vars['shards'].get()),
-            filled_slots=int(self.vars['filled'].get()),
-            total_slots=int(self.vars['total'].get()),
-        )
-
 
 class AutoDialog(simpledialog.Dialog):
     def body(self, frame: tk.Frame) -> tk.Entry:

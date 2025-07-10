@@ -22,20 +22,16 @@ python3 satisfactory_flow_gui.py
   console interface.
 
 ## Basic Manual Test Steps
-1. **Add Node**
-   - In the GUI use the `Add Node` button, or in console type `add`.
-   - Provide sample data and confirm the node appears in the list.
+1. **Auto Build**
+   - Use the `Auto Build` button to generate nodes.
 2. **Save Workspace**
    - Trigger the *Save* action (`Ctrl+S`, the GUI button or `save` command).
    - Verify that `workspace.json` is created or updated.
 3. **Load Workspace**
    - Restart the application and check that previously created nodes are loaded.
 4. **Build Graph** (GUI only)
-   - Click *Show Graph* and ensure a matplotlib window renders a graph of node
-     connections.
-5. **Delete Node**
-   - Remove a node using the *Delete* action or the `delete` command and confirm
-     it no longer appears.
+   - Click *Show Graph*. The workspace should save automatically and a
+     matplotlib window should display the node connections.
 
 These steps provide a minimal smoke test for the application in both GUI and
 console modes.
