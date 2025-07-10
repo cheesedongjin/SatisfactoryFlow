@@ -22,6 +22,12 @@ def _map_recipes(disabled: Set[str] | None = None) -> Dict[str, Dict]:
     for cls, data in RECIPES.items():
         if disabled and cls in disabled:
             continue
+        # Skip the "Converter" recipes that transform resources using
+        # S.A.M. ingots. These lead to loops where raw ores are produced
+        # from themselves instead of being treated as simple resource
+        # nodes.
+        if "Desc_Converter_C" in data.get("producedIn", []):
+            continue
         for prod in data.get('products', []):
             item = prod['item']
             if item not in mapping or mapping[item].get('alternate'):
