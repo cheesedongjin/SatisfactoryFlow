@@ -11,6 +11,7 @@ class Node:
     shards: int = 0
     filled_slots: int = 0
     total_slots: int = 0
+    count: float = 1.0
 
     def __post_init__(self) -> None:
         self.clock = round(max(0.0, min(self.clock, self.max_clock())), 4)
@@ -26,13 +27,13 @@ class Node:
         return (1 + (self.filled_slots / self.total_slots)) ** 2
 
     def power_usage(self) -> float:
-        base = self.base_power
+        base = self.base_power * self.count
         multiplier = self.power_multiplier()
         usage = base * multiplier * ((self.clock / 100) ** 1.321928)
         return usage
 
     def production_factor(self) -> float:
-        return (self.clock / 100.0) * self.power_multiplier()
+        return (self.clock / 100.0) * self.power_multiplier() * self.count
 
     def to_dict(self) -> Dict:
         return {
@@ -44,6 +45,7 @@ class Node:
             "shards": self.shards,
             "filled_slots": self.filled_slots,
             "total_slots": self.total_slots,
+            "count": self.count,
         }
 
     @staticmethod
@@ -57,5 +59,6 @@ class Node:
             shards=d.get("shards", 0),
             filled_slots=d.get("filled_slots", 0),
             total_slots=d.get("total_slots", 0),
+            count=d.get("count", 1.0),
         )
 

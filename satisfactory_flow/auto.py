@@ -82,13 +82,13 @@ def _gen_nodes(item_id: str, rate: float, nodes: List[Node], seen: set[str] | No
     machines = rate / per_machine if per_machine > 0 else 1.0
     if machines < 1:
         machines = 1.0
-    total_power = base_power * machines
 
     node = Node(
         name=f"{building_name} ({recipe['name']})",
-        base_power=total_power,
+        base_power=base_power,
         inputs={},
         outputs={item_name: rate},
+        count=machines,
     )
     nodes.append(node)
 
