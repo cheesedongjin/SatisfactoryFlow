@@ -160,6 +160,12 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
     for key, node in merged.items():
         out_name, out_rate = next(iter(node.outputs.items()))
         pm = per_machine.get(key, 0.0)
+        if key.startswith("Source"):
+            # Keep a single source node regardless of the combined rate
+            node.count = 1.0
+            node.clock = 100.0
+            result.append(node)
+            continue
         if pm <= 0:
             # Source or loop; assume rate per machine equals first node rate
             pm = out_rate

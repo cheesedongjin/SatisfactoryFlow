@@ -91,9 +91,14 @@ class App(tk.Tk):
         node_map: List[tuple[str, Node]] = []
         for idx, node in enumerate(self.nodes):
             cnt = max(1, int(round(node.count)))
+            if node.name.startswith("Source"):
+                cnt = 1
             for i in range(cnt):
                 node_id = f"{idx}_{i}"
-                label = f"{node.name}\n{node.clock:.1f}%"
+                if node.name.startswith("Source"):
+                    label = node.name
+                else:
+                    label = f"{node.name}\n{node.clock:.1f}%"
                 G.add_node(node_id, label=label)
                 node_map.append((node_id, node))
 
