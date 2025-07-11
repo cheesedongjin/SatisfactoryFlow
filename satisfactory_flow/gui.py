@@ -8,12 +8,21 @@ import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import to_pydot
 from PIL import Image
 import io
+import math
 
 from .models import Node
 from .auto import generate_workspace, set_disabled_recipes, RECIPES_BY_OUTPUT
 from .summary import compute_summary
 
 WORKSPACE_FILE = "workspace.json"
+
+
+def format_close_number(x, ndigits=6, tol=1e-9):
+    rounded = round(x, ndigits)
+    if math.isclose(x, rounded, abs_tol=tol):
+        return f"{rounded:g}"
+    else:
+        return f"{x:.{ndigits}g}"
 
 class App(tk.Tk):
     def __init__(self) -> None:
@@ -46,29 +55,29 @@ class App(tk.Tk):
         self.node_list.delete(0, tk.END)
         for node in self.nodes:
             outs = ", ".join(
-                f"{item} {amt:.1f}/min" for item, amt in node.scaled_outputs().items()
+                f"{item} {format_close_number(amt)}/min" for item, amt in node.scaled_outputs().items()
             )
             self.node_list.insert(
-                tk.END, f"{node.name} | {outs} | Power {node.power_usage():.2f} MW"
+                tk.END, f"{node.name} | {outs} | Power {format_close_number(node.power_usage())} MW"
             )
         summary = compute_summary(self.nodes)
         parts: List[str] = []
         if summary["sources"]:
             src = ", ".join(
-                f"{k} {v:.1f}/min" for k, v in summary["sources"].items()
+                f"{k} {format_close_number(v)}/min" for k, v in summary["sources"].items()
             )
             parts.append(f"Sources: {src}")
         if summary["byproducts"]:
             bp = ", ".join(
-                f"{k} {v:.1f}/min" for k, v in summary["byproducts"].items()
+                f"{k} {format_close_number(v)}/min" for k, v in summary["byproducts"].items()
             )
             parts.append(f"Byproducts: {bp}")
         if summary["products"]:
             prod = ", ".join(
-                f"{k} {v:.1f}/min" for k, v in summary["products"].items()
+                f"{k} {format_close_number(v)}/min" for k, v in summary["products"].items()
             )
             parts.append(f"Products: {prod}")
-        parts.append(f"Power: {summary['power']:.2f} MW")
+        parts.append(f"Power: {format_close_number(summary['power'])} MW")
         self.summary_label.config(text="\n".join(parts))
 
 
@@ -101,9 +110,9 @@ class App(tk.Tk):
                 outs = node.scaled_outputs()
                 rate = outs.get(node.primary_output, next(iter(outs.values())))
                 if node.name.startswith("Source"):
-                    label = f"{node.name}\n{rate:.1f}/min"
+                    label = f"{node.name}\n{format_close_number(rate)}/min"
                 else:
-                    label = f"{node.name}\n{node.clock:.1f}%\n{rate:.1f}/min"
+                    label = f"{node.name}\n{format_close_number(node.clock)}%\n{format_close_number(rate)}/min"
                 G.add_node(node_id, label=label)
                 node_map.append((node_id, node))
 
@@ -116,7 +125,7 @@ class App(tk.Tk):
                 for item in src_node.outputs:
                     if item in dst_node.inputs:
                         rate = min(src_outs.get(item, 0.0), dst_ins.get(item, 0.0))
-                        label = f"{item} {rate:.1f}/min"
+                        label = f"{item} {format_close_number(rate)}/min"
                         G.add_edge(src_id, dst_id, label=label)
         return G
 
