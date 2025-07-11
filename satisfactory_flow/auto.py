@@ -185,6 +185,7 @@ def generate_workspace(
 def _merge_nodes(nodes: List[Node]) -> List[Node]:
     merged: Dict[str, Node] = {}
     per_machine: Dict[str, float] = {}
+    loops: Dict[str, float] = {}
 
     def recipe_rate(name: str, out_name: str) -> float:
         recipe_key = name.split("(")[-1].rstrip(")") if "(" in name else ""
@@ -204,6 +205,9 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
     for node in nodes:
         key = node.name
         out_rate = node.outputs.get(node.primary_output, 0.0)
+        if key.startswith("Loop "):
+            loops[node.primary_output] = loops.get(node.primary_output, 0.0) + out_rate
+            continue
         if key not in merged:
             merged[key] = Node(
                 name=node.name,
@@ -217,7 +221,7 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
                 total_slots=node.total_slots,
                 count=0.0,
             )
-            if key.startswith("Source") or key.startswith("Loop"):
+            if key.startswith("Source"):
                 per_machine[key] = out_rate / node.count if node.count else out_rate
             else:
                 per_machine[key] = recipe_rate(node.name, node.primary_output)
@@ -227,6 +231,25 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
                 m.inputs[k] = m.inputs.get(k, 0.0) + v
             for k, v in node.outputs.items():
                 m.outputs[k] = m.outputs.get(k, 0.0) + v
+
+    # Merge loop outputs into corresponding nodes
+    for item, rate in loops.items():
+        target = None
+        for node in merged.values():
+            if item in node.outputs and not node.name.startswith("Source"):
+                target = node
+                break
+        if target:
+            target.outputs[item] = target.outputs.get(item, 0.0) + rate
+        else:
+            key = f"Loop {item}"
+            merged[key] = Node(
+                name=key,
+                base_power=0.0,
+                inputs={},
+                outputs={item: rate},
+                primary_output=item,
+            )
 
     result: List[Node] = []
     for key, node in merged.items():
