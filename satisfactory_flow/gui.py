@@ -46,7 +46,7 @@ class App(tk.Tk):
         self.node_list.delete(0, tk.END)
         for node in self.nodes:
             outs = ", ".join(
-                f"{item} {amt:.1f}/\uBD84" for item, amt in node.scaled_outputs().items()
+                f"{item} {amt:.1f}/min" for item, amt in node.scaled_outputs().items()
             )
             self.node_list.insert(
                 tk.END, f"{node.name} | {outs} | Power {node.power_usage():.2f} MW"
@@ -55,17 +55,17 @@ class App(tk.Tk):
         parts: List[str] = []
         if summary["sources"]:
             src = ", ".join(
-                f"{k} {v:.1f}/\uBD84" for k, v in summary["sources"].items()
+                f"{k} {v:.1f}/min" for k, v in summary["sources"].items()
             )
             parts.append(f"Sources: {src}")
         if summary["byproducts"]:
             bp = ", ".join(
-                f"{k} {v:.1f}/\uBD84" for k, v in summary["byproducts"].items()
+                f"{k} {v:.1f}/min" for k, v in summary["byproducts"].items()
             )
             parts.append(f"Byproducts: {bp}")
         if summary["products"]:
             prod = ", ".join(
-                f"{k} {v:.1f}/\uBD84" for k, v in summary["products"].items()
+                f"{k} {v:.1f}/min" for k, v in summary["products"].items()
             )
             parts.append(f"Products: {prod}")
         parts.append(f"Power: {summary['power']:.2f} MW")
@@ -101,9 +101,9 @@ class App(tk.Tk):
                 outs = node.scaled_outputs()
                 rate = outs.get(node.primary_output, next(iter(outs.values())))
                 if node.name.startswith("Source"):
-                    label = f"{node.name}\n{rate:.1f}/\uBD84"
+                    label = f"{node.name}\n{rate:.1f}/min"
                 else:
-                    label = f"{node.name}\n{node.clock:.1f}%\n{rate:.1f}/\uBD84"
+                    label = f"{node.name}\n{node.clock:.1f}%\n{rate:.1f}/min"
                 G.add_node(node_id, label=label)
                 node_map.append((node_id, node))
 
