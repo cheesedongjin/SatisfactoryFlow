@@ -10,7 +10,7 @@ from PIL import Image
 import io
 
 from .models import Node
-from .auto import generate_workspace, set_disabled_recipes
+from .auto import generate_workspace, set_disabled_recipes, RECIPES_BY_OUTPUT
 from .summary import compute_summary
 
 WORKSPACE_FILE = "workspace.json"
@@ -176,12 +176,14 @@ class AutoDialog(simpledialog.Dialog):
             self.items = json.load(f)
         names = sorted(v['name'] for v in self.items.values())
         self.name_map = {v['name']: k for k, v in self.items.items()}
+        self.user_edited = False
 
         ttk.Label(frame, text='Target Item').grid(row=0, column=0)
         self.cb = ttk.Combobox(frame, values=names, state='readonly')
         self.cb.grid(row=0, column=1)
         if names:
             self.cb.set(names[0])
+        self.cb.bind('<<ComboboxSelected>>', lambda _e: self._on_target_change())
 
         ttk.Label(frame, text='Rate per minute').grid(row=1, column=0)
         self.rate = tk.Entry(frame)
@@ -201,8 +203,10 @@ class AutoDialog(simpledialog.Dialog):
         self.source_frame = ttk.Frame(frame)
         self.source_frame.grid(row=4, column=1, sticky='w')
         self.source_boxes: List[ttk.Combobox] = []
-        self._add_source_row()
-        ttk.Button(frame, text='+', command=self._add_source_row).grid(row=5, column=1, sticky='w')
+        self._set_sources([])
+        ttk.Button(frame, text='+', command=lambda: self._add_source_row(user=True)).grid(row=5, column=1, sticky='w')
+
+        self._on_target_change()
 
         return self.rate
 
@@ -216,17 +220,29 @@ class AutoDialog(simpledialog.Dialog):
             return False
         return True
 
-    def _add_source_row(self) -> None:
+    def _set_sources(self, names: List[str]) -> None:
+        for row, _ in self.source_boxes:
+            row.destroy()
+        self.source_boxes.clear()
+        if not names:
+            names = [sorted(self.name_map.keys())[0]] if self.name_map else []
+        for n in names:
+            self._add_source_row(value=n, user=False)
+
+    def _add_source_row(self, value: str | None = None, user: bool = False) -> None:
         row = ttk.Frame(self.source_frame)
         names = sorted(self.name_map.keys())
         cb = ttk.Combobox(row, values=names, state='readonly')
         if names:
-            cb.set(names[0])
+            cb.set(value or names[0])
         cb.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        cb.bind('<<ComboboxSelected>>', lambda _e: self._mark_user_edited())
         btn = ttk.Button(row, text='-', command=lambda r=row: self._remove_source_row(r))
         btn.pack(side=tk.LEFT)
         row.pack(fill=tk.X, pady=2)
         self.source_boxes.append((row, cb))
+        if user:
+            self._mark_user_edited()
 
     def _remove_source_row(self, row: ttk.Frame) -> None:
         for i, (r, cb) in enumerate(self.source_boxes):
@@ -234,6 +250,26 @@ class AutoDialog(simpledialog.Dialog):
                 r.destroy()
                 self.source_boxes.pop(i)
                 break
+        self._mark_user_edited()
+
+    def _mark_user_edited(self) -> None:
+        self.user_edited = True
+
+    def _on_target_change(self) -> None:
+        if self.user_edited:
+            return
+        item_name = self.cb.get()
+        item_id = self.name_map.get(item_name)
+        recipe = RECIPES_BY_OUTPUT.get(item_id)
+        if not recipe:
+            self._set_sources([])
+            return
+        ing_names = []
+        for ing in recipe.get('ingredients', []):
+            name = self.items.get(ing['item'], {}).get('name')
+            if name:
+                ing_names.append(name)
+        self._set_sources(ing_names)
 
     def apply(self) -> None:
         item_name = self.cb.get()
