@@ -17,12 +17,18 @@ from .summary import compute_summary
 WORKSPACE_FILE = "workspace.json"
 
 
-def format_close_number(x, ndigits=6, tol=1e-9):
+def format_close_number(x: float, ndigits: int = 3, tol: float = 1e-4) -> str:
+    """Return a short string while smoothing out tiny float errors.
+
+    The value is rounded to ``ndigits`` decimal places. If the rounded value
+    is within ``tol`` of the original number, the rounded value is used so
+    numbers like ``0.29999`` become ``0.3``.
+    """
+
     rounded = round(x, ndigits)
     if math.isclose(x, rounded, abs_tol=tol):
         return f"{rounded:g}"
-    else:
-        return f"{x:.{ndigits}g}"
+    return f"{x:.{ndigits}g}"
 
 class App(tk.Tk):
     def __init__(self) -> None:
