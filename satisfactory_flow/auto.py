@@ -236,7 +236,7 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
     for item, rate in loops.items():
         target = None
         for node in merged.values():
-            if node.primary_output == item and not node.name.startswith("Source"):
+            if item in node.outputs and not node.name.startswith("Source"):
                 target = node
                 break
         if target:
