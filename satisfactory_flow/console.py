@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from .models import Node
 from .auto import set_disabled_recipes
+from .summary import compute_summary
 
 WORKSPACE_FILE = "workspace.json"
 
@@ -55,7 +56,29 @@ class ConsoleApp:
             print("No nodes defined")
             return
         for idx, node in enumerate(self.nodes):
-            print(f"{idx}: {node.name} | Power {node.power_usage():.2f} MW")
+            outs = ", ".join(
+                f"{item} {amt:.1f}/\uBD84" for item, amt in node.scaled_outputs().items()
+            )
+            print(
+                f"{idx}: {node.name} | {outs} | Power {node.power_usage():.2f} MW"
+            )
+        summary = compute_summary(self.nodes)
+        if summary["sources"]:
+            src = ", ".join(
+                f"{k} {v:.1f}/\uBD84" for k, v in summary["sources"].items()
+            )
+            print(f"Sources: {src}")
+        if summary["byproducts"]:
+            bp = ", ".join(
+                f"{k} {v:.1f}/\uBD84" for k, v in summary["byproducts"].items()
+            )
+            print(f"Byproducts: {bp}")
+        if summary["products"]:
+            prod = ", ".join(
+                f"{k} {v:.1f}/\uBD84" for k, v in summary["products"].items()
+            )
+            print(f"Products: {prod}")
+        print(f"Power: {summary['power']:.2f} MW")
 
     def add_node(self) -> None:
         name = input("Name: ").strip()
