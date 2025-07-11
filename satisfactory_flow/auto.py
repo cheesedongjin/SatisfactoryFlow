@@ -100,19 +100,35 @@ def _gen_nodes(
                 base_power=0.0,
                 inputs={},
                 outputs={item_name: rate},
+                primary_output=item_name,
             )
         )
         return
     if item_id in seen:
         item_name = ITEMS.get(item_id, {}).get('name', item_id)
-        nodes.append(Node(name=f"Loop {item_name}", base_power=0.0, inputs={}, outputs={item_name: rate}))
+        nodes.append(
+            Node(
+                name=f"Loop {item_name}",
+                base_power=0.0,
+                inputs={},
+                outputs={item_name: rate},
+                primary_output=item_name,
+            )
+        )
         return
     seen.add(item_id)
     recipe = RECIPES_BY_OUTPUT.get(item_id)
     item_name = ITEMS.get(item_id, {}).get('name', item_id)
     if not recipe:
-        nodes.append(Node(name=f"Source {item_name}", base_power=0.0,
-                          inputs={}, outputs={item_name: rate}))
+        nodes.append(
+            Node(
+                name=f"Source {item_name}",
+                base_power=0.0,
+                inputs={},
+                outputs={item_name: rate},
+                primary_output=item_name,
+            )
+        )
         return
 
     building_id = recipe.get('producedIn', [None])[0]
@@ -135,12 +151,19 @@ def _gen_nodes(
     if machines < 1:
         machines = 1.0
 
+    outputs: Dict[str, float] = {}
+    for prod in recipe.get('products', []):
+        prod_name = ITEMS.get(prod['item'], {}).get('name', prod['item'])
+        prod_rate = machines * prod['amount'] * 60.0 / recipe['duration']
+        outputs[prod_name] = prod_rate
+
     node = Node(
         name=f"{building_name} ({recipe['name']})",
         base_power=base_power,
         inputs={},
-        outputs={item_name: rate},
+        outputs=outputs,
         count=machines,
+        primary_output=item_name,
     )
     nodes.append(node)
 
@@ -182,13 +205,14 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
 
     for node in nodes:
         key = node.name
-        out_name, out_rate = next(iter(node.outputs.items()))
+        out_rate = node.outputs.get(node.primary_output, 0.0)
         if key not in merged:
             merged[key] = Node(
                 name=node.name,
                 base_power=node.base_power,
                 inputs=node.inputs.copy(),
                 outputs=node.outputs.copy(),
+                primary_output=node.primary_output,
                 clock=100.0,
                 shards=node.shards,
                 filled_slots=node.filled_slots,
@@ -198,7 +222,7 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
             if key.startswith("Source") or key.startswith("Loop"):
                 per_machine[key] = out_rate / node.count if node.count else out_rate
             else:
-                per_machine[key] = recipe_rate(node.name, out_name)
+                per_machine[key] = recipe_rate(node.name, node.primary_output)
         else:
             m = merged[key]
             for k, v in node.inputs.items():
@@ -208,7 +232,7 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
 
     result: List[Node] = []
     for key, node in merged.items():
-        out_name, out_rate = next(iter(node.outputs.items()))
+        out_rate = node.outputs.get(node.primary_output, 0.0)
         pm = per_machine.get(key, 0.0)
         if key.startswith("Source"):
             # Keep a single source node regardless of the combined rate

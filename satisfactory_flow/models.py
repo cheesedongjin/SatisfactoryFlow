@@ -12,6 +12,7 @@ class Node:
     filled_slots: int = 0
     total_slots: int = 0
     count: float = 1.0
+    primary_output: str = ""
 
     def __post_init__(self) -> None:
         self.clock = round(max(0.0, min(self.clock, self.max_clock())), 4)
@@ -35,12 +36,21 @@ class Node:
     def production_factor(self) -> float:
         return (self.clock / 100.0) * self.power_multiplier() * self.count
 
+    def scaled_inputs(self) -> Dict[str, float]:
+        factor = (self.clock / 100.0) * self.power_multiplier()
+        return {k: v * factor for k, v in self.inputs.items()}
+
+    def scaled_outputs(self) -> Dict[str, float]:
+        factor = (self.clock / 100.0) * self.power_multiplier()
+        return {k: v * factor for k, v in self.outputs.items()}
+
     def to_dict(self) -> Dict:
         return {
             "name": self.name,
             "base_power": self.base_power,
             "inputs": self.inputs,
             "outputs": self.outputs,
+            "primary_output": self.primary_output,
             "clock": self.clock,
             "shards": self.shards,
             "filled_slots": self.filled_slots,
@@ -55,6 +65,7 @@ class Node:
             base_power=d.get("base_power", 0.0),
             inputs=d.get("inputs", {}),
             outputs=d.get("outputs", {}),
+            primary_output=d.get("primary_output", ""),
             clock=d.get("clock", 100.0),
             shards=d.get("shards", 0),
             filled_slots=d.get("filled_slots", 0),

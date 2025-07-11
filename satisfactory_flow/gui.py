@@ -11,6 +11,7 @@ import io
 
 from .models import Node
 from .auto import generate_workspace, set_disabled_recipes
+from .summary import compute_summary
 
 WORKSPACE_FILE = "workspace.json"
 
@@ -36,12 +37,39 @@ class App(tk.Tk):
         self.node_list = tk.Listbox(self)
         self.node_list.pack(fill=tk.BOTH, expand=True)
 
+        self.summary_label = tk.Label(self, justify=tk.LEFT, anchor="w")
+        self.summary_label.pack(fill=tk.X)
+
         self.bind("<Control-s>", lambda _e: self.save_workspace())
 
     def refresh_list(self) -> None:
         self.node_list.delete(0, tk.END)
         for node in self.nodes:
-            self.node_list.insert(tk.END, f"{node.name} | Power {node.power_usage():.2f} MW")
+            outs = ", ".join(
+                f"{item} {amt:.1f}/\uBD84" for item, amt in node.scaled_outputs().items()
+            )
+            self.node_list.insert(
+                tk.END, f"{node.name} | {outs} | Power {node.power_usage():.2f} MW"
+            )
+        summary = compute_summary(self.nodes)
+        parts: List[str] = []
+        if summary["sources"]:
+            src = ", ".join(
+                f"{k} {v:.1f}/\uBD84" for k, v in summary["sources"].items()
+            )
+            parts.append(f"Sources: {src}")
+        if summary["byproducts"]:
+            bp = ", ".join(
+                f"{k} {v:.1f}/\uBD84" for k, v in summary["byproducts"].items()
+            )
+            parts.append(f"Byproducts: {bp}")
+        if summary["products"]:
+            prod = ", ".join(
+                f"{k} {v:.1f}/\uBD84" for k, v in summary["products"].items()
+            )
+            parts.append(f"Products: {prod}")
+        parts.append(f"Power: {summary['power']:.2f} MW")
+        self.summary_label.config(text="\n".join(parts))
 
 
     def auto_build(self) -> None:
@@ -70,10 +98,12 @@ class App(tk.Tk):
                 cnt = 1
             for i in range(cnt):
                 node_id = f"{idx}_{i}"
+                outs = node.scaled_outputs()
+                rate = outs.get(node.primary_output, next(iter(outs.values())))
                 if node.name.startswith("Source"):
-                    label = node.name
+                    label = f"{node.name}\n{rate:.1f}/\uBD84"
                 else:
-                    label = f"{node.name}\n{node.clock:.1f}%"
+                    label = f"{node.name}\n{node.clock:.1f}%\n{rate:.1f}/\uBD84"
                 G.add_node(node_id, label=label)
                 node_map.append((node_id, node))
 
