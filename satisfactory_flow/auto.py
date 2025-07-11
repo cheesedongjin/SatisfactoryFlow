@@ -148,8 +148,6 @@ def _gen_nodes(
             break
     per_machine = out_amount * 60.0 / recipe['duration'] if recipe['duration'] else 0.0
     machines = rate / per_machine if per_machine > 0 else 1.0
-    if machines < 1:
-        machines = 1.0
 
     outputs: Dict[str, float] = {}
     for prod in recipe.get('products', []):
@@ -248,6 +246,12 @@ def _merge_nodes(nodes: List[Node]) -> List[Node]:
             machines_needed = out_rate / pm
         int_count = max(1, ceil(machines_needed))
         clock = out_rate / (int_count * pm) * 100.0 if pm > 0 else 100.0
+        if out_rate > 0 and pm > 0:
+            scale = int_count / machines_needed if machines_needed > 0 else 1.0
+            for k in node.inputs:
+                node.inputs[k] *= scale
+            for k in node.outputs:
+                node.outputs[k] *= scale
         node.count = float(int_count)
         node.clock = round(clock, 4)
         result.append(node)
