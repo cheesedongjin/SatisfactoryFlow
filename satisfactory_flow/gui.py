@@ -108,12 +108,16 @@ class App(tk.Tk):
                 node_map.append((node_id, node))
 
         for src_id, src_node in node_map:
+            src_outs = src_node.scaled_outputs()
             for dst_id, dst_node in node_map:
                 if src_id == dst_id:
                     continue
+                dst_ins = dst_node.scaled_inputs()
                 for item in src_node.outputs:
                     if item in dst_node.inputs:
-                        G.add_edge(src_id, dst_id, label=item)
+                        rate = min(src_outs.get(item, 0.0), dst_ins.get(item, 0.0))
+                        label = f"{item} {rate:.1f}/min"
+                        G.add_edge(src_id, dst_id, label=label)
         return G
 
     def show_graph(self) -> None:
