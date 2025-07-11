@@ -14,6 +14,7 @@ Features
 - Save and load a workspace automatically (`workspace.json`).
 - Toggle unavailable alternate recipes via the **Recipes** button (saved in the workspace).
 - Visualize node connections with a simple graph using NetworkX and Matplotlib.
+- Edge labels show item throughput, e.g. `Iron Plate 20.0/min`.
 - Workspace is automatically saved when using **Show Graph**.
 - Shortcut **Ctrl+S** or the *Save* button to store the current workspace.
 
